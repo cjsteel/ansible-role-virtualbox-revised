@@ -1,0 +1,43 @@
+---
+# roles/virtualbox/meta/main.yml
+
+dependencies:
+
+#  - role: cjsteel.resources
+#    resources_on_local : '{{ virtualbox_resources_on_local }}'
+#    resources_on_remote: '{{ virtualbox_resources_on_remote }}'
+
+#  - role: acemenu
+
+galaxy_info:
+  author: 'Christopher Steel'
+  description: 'virtualbox is used to...'
+  company: 'McGill Centre for Integrative Neuroscience'
+  license: MIT
+  min_ansible_version: '1.7.1'
+
+  platforms:
+    - name: EL
+      versions:
+        - 5
+        - 6
+        - 7
+    - name: Ubuntu
+      versions:
+        - bionic
+        - precise
+        - trusty
+        - xenial
+    - name: Debian
+      versions:
+        - jessie
+        - squeeze
+        - stretch
+        - wheezy
+
+  galaxy_tags:
+    - mcin
+    - virtualbox
+    - centos
+    - debian
+    - ubuntu

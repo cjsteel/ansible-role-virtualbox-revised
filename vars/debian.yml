@@ -1,0 +1,5 @@
+---
+# roles/virtualbox/vars/debian.yml
+
+# Debian specific vars
+virtualbox_package_extension: 'deb'

@@ -1,0 +1,4 @@
+---
+# roles/virtualbox/vars/debian.yml
+
+virtualbox_package_extension: 'rpm'

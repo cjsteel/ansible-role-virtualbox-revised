@@ -1,0 +1,48 @@
+---
+# roles/virtualbox/tasks/ubuntu_16.04.yml
+
+- debug:
+    msg:
+      - "Ubuntu 16.04 is supported"
+      - "System {{ inventory_hostname }} being configured"
+
+## Get latest available version number
+
+- name: "Ensure for resources directory exists"
+  delegate_to: 127.0.0.1
+  file:
+    path: ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/
+    state: directory
+    mode: 0755
+
+- name: Get LATEST-STABLE.TXT from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT"
+    force: true
+
+- name: Set virtualbox_lastest_available_version vale
+  delegate_to: 127.0.0.1
+  shell: cat ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT
+  register: virtualbox_lastest_available_version
+
+- name: DEBUG value of virtualbox_lastest_available_version.stdout
+  debug: var=virtualbox_lastest_available_version.stdout
+
+## Which virtualbox version, if any, is installed on the target?
+
+- name: checking if virtualbox is install
+#  delegate_to: 127.0.0.1
+  command: VBoxManage -V
+  register: virtualbox_installed_version
+  ignore_errors: true
+
+- name: DEBUG value of virtualbox_installed_version.stdout
+  debug: var=virtualbox_installed_version.stdout
+
+- name: DEBUG value of virtualbox_installed_version
+  debug: msg='VBoxManage -V returns "No such file or directory"'
+  when: virtualbox_installed_version.stdout is not defined
+#  when: "'No such file or directory' not in {{ virtualbox_installed_version.msg }}"
+  ignore_errors: true
