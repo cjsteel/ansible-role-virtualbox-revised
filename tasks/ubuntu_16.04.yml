@@ -6,7 +6,9 @@
       - "Ubuntu 16.04 is supported"
       - "System {{ inventory_hostname }} being configured"
 
-## Get latest available version number
+# On Controller
+
+## Ensure virtualbox latest resources directory exists
 
 - name: "Ensure for resources directory exists"
   delegate_to: 127.0.0.1
@@ -15,6 +17,8 @@
     state: directory
     mode: 0755
 
+## Determine the latest available version of virtualbox on virtulabox.org
+
 - name: Get LATEST-STABLE.TXT from download.virtualbox.org
   delegate_to: 127.0.0.1
   get_url:
@@ -22,15 +26,65 @@
     dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT"
     force: true
 
-- name: Set virtualbox_lastest_available_version vale
+- name: Set value of virtualbox_lastest_available_version variable
   delegate_to: 127.0.0.1
   shell: cat ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT
   register: virtualbox_lastest_available_version
 
 - name: DEBUG value of virtualbox_lastest_available_version.stdout
   debug: var=virtualbox_lastest_available_version.stdout
+  when: virtualbox_debug
+
+## Determine if latest version resources are currently available on controller
+
+### Do we have a versioned directory on the controller for the target os?
+#
+# In other words does something like:
+#
+#  ~/resources/sw/ubuntu/16.04/virtualbox/5.2.2/
+#  # or perhaps
+#  ~/resources/sw/ubuntu/18.04/virtualbox/5.2.2/
+#
+
+# Determine if a path exists and is a directory.  Note that we need to test
+# both that p.stat.isdir actually exists, and also that it's set to true.
+
+- stat:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+  register: path_virtualbox_lastest_available_version
+
+### when version directory exists for latest version
+
+- name: version resources path  exists and is a directory
+  debug:
+    msg: "Path to resources version exists and is a directory"
+  when: path_virtualbox_lastest_available_version.stat.isdir is defined and
+        path_virtualbox_lastest_available_version.stat.isdir
+
+# then we do nothing
+
+### when version directory does not exist for latest version
+
+- name: version resources path does not exist or is not a directory
+  debug:
+    msg: "Path to resource version does not exist OR is not a directory"
+  when: path_virtualbox_lastest_available_version.stat.isdir is not defined or not
+        path_virtualbox_lastest_available_version.stat.isdir
+
+### Ensure the directory exists
+
+- name: "Ensure versioned resources directory exists"
+  delegate_to: 127.0.0.1
+  file:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/'
+    state: directory
+    mode: 0755
+
+### populate controller with virtualbox version resources
 
 ## Which virtualbox version, if any, is installed on the target?
+#
+# delegate_to used for testing againts a development systems with virtualbox installed
 
 - name: checking if virtualbox is install
 #  delegate_to: 127.0.0.1
@@ -38,11 +92,15 @@
   register: virtualbox_installed_version
   ignore_errors: true
 
+### when virtualbox is installed on target sytem
+
 - name: DEBUG value of virtualbox_installed_version.stdout
   debug: var=virtualbox_installed_version.stdout
+  when: virtualbox_debug
+
+### when virtualbox is not installed on target
 
 - name: DEBUG value of virtualbox_installed_version
   debug: msg='VBoxManage -V returns "No such file or directory"'
   when: virtualbox_installed_version.stdout is not defined
-#  when: "'No such file or directory' not in {{ virtualbox_installed_version.msg }}"
   ignore_errors: true

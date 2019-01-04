@@ -1,7 +1,10 @@
 ---
 # roles/virtualbox/defaults/main.yml
 
-virtualbox_debug: false
+virtualbox_debug: true
+virtualbox_version: latest # 5.2.22
+
+## Galaxy skeleton generated variables below
 
 virtualbox_controller_user: '{{ project_controller_user }}'
 virtualbox_controller_home: '{{ project_controller_home }}'
