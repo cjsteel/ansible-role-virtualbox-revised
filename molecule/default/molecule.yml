@@ -6,7 +6,9 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: instance
+  - name: virtualbox-default-xenial
+    source:
+      image: ubuntu/xenial
 provisioner:
   name: ansible
   lint:
