@@ -18,30 +18,33 @@
 
 - name: DEBUG value of path_resources_remote_mount
   debug: var=path_resources_remote_mount
-  when: virtualbox_debug
+  when: virtualbox_debug and virtualbox_resources_mount_check
 
 ### ~/resources/resources-remote-mount exists and is regular file
 
 - name: resources remote mount is mounted
   debug:
     msg: "Path to file resources-remote-mount exists and isreg file"
-  when: path_resources_remote_mount.stat.exists and
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and (
+        path_resources_remote_mount.stat.exists and
         path_resources_remote_mount.stat.isreg is defined and
-        path_resources_remote_mount.stat.isreg
+        path_resources_remote_mount.stat.isreg )
 
 ### ~/resources/resources-remote-mount does not exists or is not a  regular file
 
 - name: version resources path does not exist or is not a directory
   debug:
     msg: "Path to resource version does not exist OR is not a directory"
-  when: path_resources_remote_mount.stat.exists is not defined or
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and (
+        path_resources_remote_mount.stat.exists is not defined or
         path_resources_remote_mount.stat.isreg is not defined or not
-        path_resources_remote_mount.stat.isreg 
+        path_resources_remote_mount.stat.isreg )
 
 - name: Fail when ~/resources/ is not mounted OR ~/resources/resources-remote-mount is not a regular file
   fail:
     msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
-  when: path_resources_remote_mount.stat.exists is not defined or
+  when: virtualbox_resources_mount_check and 
+        path_resources_remote_mount.stat.exists is not defined or
         path_resources_remote_mount.stat.isreg is not defined or not
         path_resources_remote_mount.stat.isreg 
 
@@ -118,6 +121,22 @@
     mode: 0755
 
 ### populate controller with virtualbox version resources
+
+## Determine the latest available version of virtualbox on virtulabox.org
+
+- name: Get SHA256SUMS from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/SHA256SUMS"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SHA256SUMS"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+- name: "Extract resource filenames from SHA256SUMS"
+  delegate_to: 127.0.0.1
+  shell: awk '{print $2}' SHA256SUMS > ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/resource_filenames_raw
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
 
 ## Which virtualbox version, if any, is installed on the target?
 #
