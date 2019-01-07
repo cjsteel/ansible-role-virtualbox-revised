@@ -137,6 +137,66 @@
   args:
     chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
 
+- name: "create the file resource_filenames without the '*' preceding each file name"
+  delegate_to: 127.0.0.1
+  shell: cat resource_filenames_raw | cut -c 2-1000 > resource_filenames
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+#### Download Virtualbox Distribution Package
+
+#- name: "Download Virtualbox Distribution Package"
+#  delegate_to: 127.0.0.1
+#  shell: wget https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/`cat resource_filenames | grep bionic_amd64.deb`
+#  args:
+#    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "Download Virtualbox Distribution Package"
+  delegate_to: 127.0.0.1
+  get_url:
+#    url: https://download.virtualbox.org/virtualbox/5.2.22/virtualbox-5.2_5.2.22-126460~Ubuntu~xenial_amd64.deb
+    url: "https://download.virtualbox.org/virtualbox/5.2.22/{{ item }}"
+#"https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ item }}"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ item }}"
+    force: '{{ virtualbox_refresh_resource_version }}'
+  with_fileglob: 'virtualbox-5.2_{{ virtualbox_lastest_available_version.stdout }}-126460~Ubuntu~xenial_amd64.deb
+*/virtualbox-*_{{ virtualbox_lastest_available_version.stdout }}-*~{{ ansible_distribution }}~{{ ansible_distribution_release }}_amd64.deb'
+
+#### Download the Extension Pack from download.virtualbox.org
+
+- name: Download the Extension Pack from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/."
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the Guest Additions ISO from download.virtualbox.org
+
+- name: "Download the Guest Additions ISO"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/VBoxGuestAdditions_{{ virtualbox_lastest_available_version.stdout }}.iso"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/."
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the Manual from download.virtualbox.org
+
+- name: "Download the Manual"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the SDK from download.virtualbox.org
+
+- name: "Download the SDK"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    force: '{{ virtualbox_refresh_resource_version }}'
 
 ## Which virtualbox version, if any, is installed on the target?
 #
