@@ -8,7 +8,11 @@ lint:
 platforms:
   - name: virtualbox-default-xenial
     source:
-      image: ubuntu/xenial
+      alias: ubuntu/xenial/amd64
+  - name: virtualbox-default-bionic
+    source:
+      type: image
+      alias: ubuntu/bionic/amd64
 provisioner:
   name: ansible
   lint:

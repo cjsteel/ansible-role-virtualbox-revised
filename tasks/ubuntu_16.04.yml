@@ -34,6 +34,7 @@
   stat:
     path: '~/resources/resources-remote-mount'
   register: path_resources_remote_mount
+  when: virtualbox_resources_mount_check
 
 - name: DEBUG value of path_resources_remote_mount
   debug: var=path_resources_remote_mount
@@ -62,10 +63,10 @@
 - name: Fail when ~/resources/ is not mounted OR ~/resources/resources-remote-mount is not a regular file
   fail:
     msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
-  when: virtualbox_resources_mount_check and 
+  when: virtualbox_resources_mount_check and (
         path_resources_remote_mount.stat.exists is not defined or
         path_resources_remote_mount.stat.isreg is not defined or not
-        path_resources_remote_mount.stat.isreg 
+        path_resources_remote_mount.stat.isreg)
 
 ## Ensure virtualbox latest resources directory exists
 
