@@ -1,6 +1,25 @@
 ---
 # roles/virtualbox/tasks/ubuntu_16.04.yml
 
+# Notes:
+#
+# ansible_distribution_release works differently for various OS package names. For example:
+#
+# On Ubuntu
+#
+#   ansible_distribution_release: xenial
+#   ansible_distribution_version == '18.04'
+#   ansible_distribution_version == '18.04'
+#
+# On CentOS:
+#
+#   ansible_distribution_release: final
+#   ansible_distribution_version == '6.4'
+#   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int >= 5
+#
+# More up top date: https://ansible-tips-and-tricks.readthedocs.io/en/latest/os-dependent-tasks/variables/
+# SLightly dated reference https://raymii.org/s/tutorials/Ansible_-_Only_if_on_specific_distribution_or_distribution_version.html
+
 - debug:
     msg:
       - "Ubuntu 16.04 is supported"
@@ -143,24 +162,60 @@
   args:
     chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
 
-#### Download Virtualbox Distribution Package
+## Determine the virtualbox distribution package name for this system
 
-#- name: "Download Virtualbox Distribution Package"
-#  delegate_to: 127.0.0.1
-#  shell: wget https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/`cat resource_filenames | grep bionic_amd64.deb`
-#  args:
-#    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+- name: Get https://download.virtualbox.org/virtualbox/5.2.22/index.html
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/5.2.22/"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/index.html"
+    force: true
+
+- name: "Grab index as text file"
+  delegate_to: 127.0.0.1
+  shell: html2txt --ignore-links https://download.virtualbox.org/virtualbox/5.2.22/ > index.txt
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "Extract raw package name"
+  delegate_to: 127.0.0.1
+  shell: cat index.txt | grep {{ ansible_distribution_release | lower }}_amd64 | cut -c 11-81 > {{ ansible_distribution_release | lower }}_amd64_package.txt.raw
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "Extract actual package name"
+  delegate_to: 127.0.0.1
+  shell: sed -r 's/\s+//g' {{ ansible_distribution_release | lower }}_amd64_package.txt.raw > {{ ansible_distribution_release | lower }}_amd64_package.txt
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+#### Download Targets Virtualbox Distribution Package
+
+- debug: msg="{{lookup('file', '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt') }}"
+  register: virtualbox_target_package_name
+
+- name: Show default empty since i dont have 'variablnotename'
+  debug: msg="{{ lookup('vars', 'myvar', default='')}}"
+  vars:
+    variablename: hello
+    myvar: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt'
+
+- name: DEBUG value of myvar
+  debug: var=myvar
+
+- name: DEBUG value of virtualbox_target_package_name
+  debug: var=virtualbox_target_package_name.msg
 
 - name: "Download Virtualbox Distribution Package"
   delegate_to: 127.0.0.1
   get_url:
-#    url: https://download.virtualbox.org/virtualbox/5.2.22/virtualbox-5.2_5.2.22-126460~Ubuntu~xenial_amd64.deb
-    url: "https://download.virtualbox.org/virtualbox/5.2.22/{{ item }}"
-#"https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ item }}"
-    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ item }}"
+    url: "https://download.virtualbox.org/virtualbox/5.2.22/{{ virtualbox_target_package_name.msg }}"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
     force: '{{ virtualbox_refresh_resource_version }}'
-  with_fileglob: 'virtualbox-5.2_{{ virtualbox_lastest_available_version.stdout }}-126460~Ubuntu~xenial_amd64.deb
-*/virtualbox-*_{{ virtualbox_lastest_available_version.stdout }}-*~{{ ansible_distribution }}~{{ ansible_distribution_release }}_amd64.deb'
+
+#- name: "FAIL NOW"
+#  fail:
+#    msg: "Failing here for debugging new code"
 
 #### Download the Extension Pack from download.virtualbox.org
 
