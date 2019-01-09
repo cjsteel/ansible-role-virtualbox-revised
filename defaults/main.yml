@@ -4,7 +4,7 @@
 virtualbox_debug: true
 virtualbox_resources_mount_check: false
 virtualbox_refresh_resource_version: false            # force re-download of targeted resources
-virtualbox_version: latest # 5.2.22
+virtualbox_version: latest                            # specific version 5.2.22 OR latest
 
 ## Galaxy skeleton generated variables below
 

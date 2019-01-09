@@ -2,6 +2,6 @@
 - name: Converge
   hosts: all
   vars:
-    - virtualbox_deployment_users_home: /root
+    - virtualbox_deployment_users_home: /home/vagrant
   roles:
     - role: virtualbox

@@ -214,9 +214,9 @@
     dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
     force: '{{ virtualbox_refresh_resource_version }}'
 
-#- name: "FAIL NOW"
-#  fail:
-#    msg: "Failing here for debugging new code"
+# - name: "FAIL NOW"
+#   fail:
+#     msg: "Failing here for debugging new code"
 
 #### Download the Extension Pack from download.virtualbox.org
 
@@ -259,7 +259,7 @@
 # delegate_to used for testing againts a development systems with virtualbox installed
 
 - name: checking if virtualbox is install
-#  delegate_to: 127.0.0.1
+  #  delegate_to: 127.0.0.1
   command: VBoxManage -V
   register: virtualbox_installed_version
   ignore_errors: true
@@ -276,3 +276,78 @@
   debug: msg='VBoxManage -V returns "No such file or directory"'
   when: virtualbox_installed_version.stdout is not defined
   ignore_errors: true
+
+## Ensure for resources on target system
+
+## Ensure virtualbox latest resources directory exists
+
+### Ensure for resources directory on target
+
+- name: "Ensure versioned resources directory exists on target system"
+  file:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/'
+    state: directory
+    mode: 0755
+
+### Copy over resources
+
+- name: "Copy the contents of our resource directory to our target system"
+  copy:
+    src: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+    dest: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox'
+    mode: 0755
+
+## Installation
+
+### Has a deb package already been installed?
+
+### Install requirmenets
+
+- name: Install build-essential
+  become: true
+  apt:
+    name: build-essential
+    state: latest
+    update_cache: yes
+
+- name: Install kernel headers
+  become: true
+  apt: >
+    name: linux-headers-{{ ansible_kernel }}
+    state: present
+
+### Install our package
+
+- name: "Install virtualbox deb package"
+  become: true
+  apt:
+    deb: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
+#  when: virtualbox_vagrant_check_deb.rc == 1
+  register: virtualbox_installation_output
+
+#### Output from installation
+
+- name: DEBUG value of virtualbox_installation_output
+  debug: var=virtualbox_installation_output
+  when: virtualbox_debug
+
+## Confirm installation
+
+- name: checking if virtualbox is install
+  command: VBoxManage -V
+  register: virtualbox_installed_version
+  ignore_errors: true
+
+### when virtualbox is installed on target sytem
+
+- name: DEBUG value of virtualbox_installed_version.stdout
+  debug: var=virtualbox_installed_version.stdout
+  when: virtualbox_debug
+
+### when virtualbox is not installed on target
+
+- name: DEBUG value of virtualbox_installed_version
+  debug: msg='VBoxManage -V returns "No such file or directory"'
+  when: virtualbox_installed_version.stdout is not defined
+  ignore_errors: true
+
