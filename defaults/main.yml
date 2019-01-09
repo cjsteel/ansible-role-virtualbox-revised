@@ -1,52 +1,19 @@
 ---
 # roles/virtualbox/defaults/main.yml
 
+virtualbox_reboot: true
 virtualbox_debug: true
 virtualbox_resources_mount_check: false
 virtualbox_refresh_resource_version: false            # force re-download of targeted resources
 virtualbox_version: latest                            # specific version 5.2.22 OR latest
 
-## Galaxy skeleton generated variables below
-
-virtualbox_controller_user: '{{ project_controller_user }}'
-virtualbox_controller_home: '{{ project_controller_home }}'
-virtualbox_controller_resources_root: '{{ project_controller_resources_home }}'
-
-virtualbox_deployment_user: '{{ project_deployment_user }}'
-virtualbox_deployment_home: '{{ project_deployment_home }}'
-virtualbox_deployment_resources_root: '{{ project_deployment_resources_home }}'
-
-## atomic versioning example
+## Extension pack bulk installation license key and info
 #
-# virtualbox_major: '0'
-# virtualbox_moderate_revision: '0'
-# virtualbox_minor_revision: '1'
-# virtualbox_build: ''
+# VBoxManage extpack install --accept-license=56be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9eb --replace Oracle_VM_VirtualBox_Extension_Pack-5.2.22.vbox-extpack
+#
+# Each version probably has a different bulk license key.
 
-## Package #
-
-virtualbox_package_state: 'present'
-virtualbox_package_version: '2.0.1'
-virtualbox_package_filename: "vagrant_{{ virtualbox_package_version }}_i686.deb"
-
-virtualbox_controller_resources_dir: '{{ virtualbox_controller_resources_root }}/sw/vagrant/debs'
-virtualbox_deployment_resources_dir: '{{ virtualbox_deployment_resources_root }}/vagrant/debs'
-
-# /tests/sw/{{ ansible_distribution| lower }}/{{ ansible_distribution_version }}/miniconda'
-
-# Help file
-
-virtualbox_acemenu_help_file_template_path: '{{ fact_role_path }}/templates/bin/acemenu/help/example_aceadmin_helpfile.md.j2'
-
-# Resources
-
-virtualbox_package_url: "https://releases.hashicorp.com/vagrant/2.0.1/vagrant_2.0.1_i686.deb"
-# virtualbox_checksum_url: "https://releases.hashicorp.com/vagrant/2.0.1/ vagrant_2.0.1_SHA256SUMS"
-# virtualbox_checksum_sig_url: "https://releases.hashicorp.com/vagrant/2.0.1/ vagrant_2.0.1_SHA256SUMS.sig"
-
-## links
-
-virtualbox_default_link_force: true
+virtualbox_extension_pack_batch_installation_license: 56be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9eb
 
 ########################################
 

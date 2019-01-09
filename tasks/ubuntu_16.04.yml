@@ -308,27 +308,57 @@
   apt:
     name: build-essential
     state: latest
-    update_cache: yes
+    update_cache: true
+
+- name: DEBUG value of ansible_kernel
+  debug: var=ansible_kernel
+  when: virtualbox_debug
 
 - name: Install kernel headers
   become: true
-  apt: >
+  apt:
     name: linux-headers-{{ ansible_kernel }}
     state: present
 
-### Install our package
+- name: Install generic kernel headers (required for lxd install)
+  become: true
+  apt:
+    name: linux-headers-generic
+    state: present
+
+### Install Virtualbox package
 
 - name: "Install virtualbox deb package"
   become: true
   apt:
     deb: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
-#  when: virtualbox_vagrant_check_deb.rc == 1
+  # when: virtualbox_vagrant_check_deb.rc == 1
   register: virtualbox_installation_output
 
 #### Output from installation
 
 - name: DEBUG value of virtualbox_installation_output
   debug: var=virtualbox_installation_output
+  when: virtualbox_debug
+
+# - name: Reboot system in order to load Virtualbox module(S)
+#   reboot:
+#   when: virtualbox_reboot
+
+### Install Extension Pack
+
+- name: "Install virtualbox extension pack"
+  become: true
+  shell: VBoxManage extpack install --accept-license={{ virtualbox_extension_pack_batch_installation_license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
+  args:
+    chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
+  # when: virtualbox_vagrant_check_deb.rc == 1
+  register: virtualbox_extension_pack_installation_output
+
+#### Output from installation
+
+- name: DEBUG value of virtualbox_extension_pack_installation_output
+  debug: var=virtualbox_extension_pack_installation_output
   when: virtualbox_debug
 
 ## Confirm installation
@@ -351,3 +381,8 @@
   when: virtualbox_installed_version.stdout is not defined
   ignore_errors: true
 
+## Documentation
+
+### copy manual to skel
+
+### copy SDK Reference to skel
