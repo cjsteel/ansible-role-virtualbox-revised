@@ -341,9 +341,23 @@
   debug: var=virtualbox_installation_output
   when: virtualbox_debug
 
+#- name: Reboot system in order to load Virtualbox module(S)
+#  reboot:
+#  when: virtualbox_reboot
+
+# restart the system
+
 - name: Reboot system in order to load Virtualbox module(S)
-  reboot:
-  when: virtualbox_reboot
+  shell: sleep 2 && shutdown -r now "Ansible actuated reboot of {{ inventory_hostname }}"
+  async: 1
+  poll: 0
+  become: true
+  ignore_errors: false
+  when: virtualbox_reboot is defined and virtualbox_reboot == true
+
+- name: Pause after reboot
+  pause: seconds=10
+  when: virtualbox_reboot is defined and virtualbox_reboot == true
 
 ### Install Extension Pack
 

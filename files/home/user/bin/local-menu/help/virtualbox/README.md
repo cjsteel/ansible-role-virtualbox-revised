@@ -1,3 +1,5 @@
+
+
 [Local Help Index](../../index/index.html)
 
 # VirtualBox
@@ -19,3 +21,8 @@
 ##### Acelab documentation
 
 Additional resources can be found on the [docs.acelab.ca](https://docs.acelab.ca/)
+
+### Assistance
+
+For additional assistance installing, configuring or using VirtualBox please [submit a GLPI ticket](https://glpi.acelab.ca/).
+
