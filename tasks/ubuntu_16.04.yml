@@ -341,9 +341,9 @@
   debug: var=virtualbox_installation_output
   when: virtualbox_debug
 
-# - name: Reboot system in order to load Virtualbox module(S)
-#   reboot:
-#   when: virtualbox_reboot
+- name: Reboot system in order to load Virtualbox module(S)
+  reboot:
+  when: virtualbox_reboot
 
 ### Install Extension Pack
 
@@ -383,6 +383,49 @@
 
 ## Documentation
 
-### copy manual to skel
+- name: split value of virtualbox_lastest_available_version.stdout
+  debug:
+    msg: "{{ virtualbox_lastest_available_version.stdout.split('.') }}"
+  register: myoutput
 
-### copy SDK Reference to skel
+- name: "loop through list from a variable"
+  debug:
+    msg: "An item: {{item}}"
+  with_items: "{{ myoutput.msg }}"
+
+- name: "Register virtualbox_major_minor_version"
+  debug:
+    msg: "{{ myoutput.msg[0] }}.{{ myoutput.msg[1] }}"
+  register: virtualbox_major_minor_version
+
+- name: "DEBUG virtualbox_major_minor_version"
+  debug:
+    var: virtualbox_major_minor_version
+
+### Virtualbox Included Documents
+
+#### /usr/share/doc/virtualbox-[0-9].[0-9]
+
+##### User Manual
+
+- name: "Copy remote UserManual.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
+  become: true
+  copy:
+    src: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
+    remote_src: true
+    mode: 0644
+
+##### SDK Reference
+
+- name: "Copy remote SDKRef.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
+  become: true
+  copy:
+    src: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
+    remote_src: true
+    mode: 0644
+
+#### Local users manual?
+
+

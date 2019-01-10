@@ -10,6 +10,37 @@
 
 virtualbox is an Ansible role used to...
 
+## Notes
+
+### Controller resource population
+
+While the role can be used to automatically populate the controller with new releases the bulk installation license for the VirtualBox Extension Pack must still be obtained manually by running something like the following. Once the licence is accepted the bulk license for whatever version you are installing will be displayed along with a new command line usage example with the correct bulk license. This process is a little unfamiliar for first time users.
+
+Enter the following command::
+
+```shell
+VBoxManage extpack install --accept-license=22be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9ac --replace Oracle_VM_VirtualBox_Extension_Pack-5.2.22.vbox-extpack
+```
+
+If you accept the license:
+
+```shell
+Do you agree to these license terms and conditions (y/n)? y
+```
+
+Something like the following will be displayed:
+
+```shell
+License accepted. For batch installaltion add
+--accept-license=56be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9eb
+to the VBoxManage command line.
+
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Successfully installed "Oracle VM VirtualBox Extension Pack".
+```
+
+Add the bulk license for the new VirtualBox version's Extention Pack `defaults/main.yml`
+
 ## Roadmap
 
 * [ROADMAP.md](ROADMAP.md)
@@ -19,6 +50,9 @@ virtualbox is an Ansible role used to...
 * [docs.ansible.com](https://docs.ansible.com/)
 
 ## Requirements
+
+* ansible 2.7 ( reboot module)
+
 
 ### Production
 
