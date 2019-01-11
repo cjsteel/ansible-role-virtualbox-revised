@@ -1,5 +1,6 @@
 # roles/virtualbox/ROADMAP.md
 
+
 * make work
   * implement
     * virtualbox_version: latest-stable, latest-beta, 5.2.22
@@ -14,6 +15,8 @@
       * virtualbox_version: latest-stable
   * enable latest stable vs latest beta
   * is checksum required after copy or performed by copy module?
+  * virtualbox_action: install, purge, reinstall, upgrade
+  * virtualbox_actions: install, remove, purge, uprade ? see slack role
   * support license keys for multiple Extension Pack versions
   * notify operator when new version is available and downloaded and prompt to recover bulk license installation.
   * menu / documentation
