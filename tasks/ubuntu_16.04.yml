@@ -429,6 +429,7 @@
     dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
     remote_src: true
     mode: 0644
+    force: true
 
 ##### SDK Reference
 
@@ -439,6 +440,7 @@
     dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
     remote_src: true
     mode: 0644
+    force: true
 
 #### Local users manual?
 
