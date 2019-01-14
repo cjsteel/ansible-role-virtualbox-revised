@@ -2,6 +2,19 @@
 - name: Converge
   hosts: all
   vars:
+
+    - reboot_identifier: "lxd testing"
+    - reboot_debug: true
+    - reboot_testing: true
+    - reboot_target: true
+    - reboot_pause: 2
+    - reboot_no_poll: true # required for LXC/LXD
+    - upgrade: true  # set to true to run upgrade role
+#    - epel: true      # set to true to run epel role
     - virtualbox_deployment_users_home: /root
+
   roles:
-    - role: virtualbox
+
+    - reboot
+    - virtualbox
+    - reboot

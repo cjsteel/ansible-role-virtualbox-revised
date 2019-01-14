@@ -42,7 +42,7 @@
 
 ### ~/resources/resources-remote-mount exists and is regular file
 
-- name: resources remote mount is mounted
+- name: "resources remote mount is mounted"
   debug:
     msg: "Path to file resources-remote-mount exists and isreg file"
   when: (virtualbox_debug and virtualbox_resources_mount_check) and (
@@ -52,7 +52,7 @@
 
 ### ~/resources/resources-remote-mount does not exists or is not a  regular file
 
-- name: version resources path does not exist or is not a directory
+- name: "version resources path does not exist or is not a directory"
   debug:
     msg: "Path to resource version does not exist OR is not a directory"
   when: (virtualbox_debug and virtualbox_resources_mount_check) and (
@@ -60,8 +60,7 @@
         path_resources_remote_mount.stat.isreg is not defined or not
         path_resources_remote_mount.stat.isreg )
 
-- name: Fail when ~/resources/ is not mounted OR ~/resources/resources-remote-mount is not a regular file
-  fail:
+- fail:
     msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
   when: virtualbox_resources_mount_check and (
         path_resources_remote_mount.stat.exists is not defined or
@@ -101,9 +100,9 @@
 #
 # In other words does something like:
 #
-#  ~/resources/sw/ubuntu/16.04/virtualbox/5.2.2/
+#  ~/resources/sw/ubuntu/16.04/virtualbox/5.2.22/
 #  # or perhaps
-#  ~/resources/sw/ubuntu/18.04/virtualbox/5.2.2/
+#  ~/resources/sw/ubuntu/18.04/virtualbox/5.2.22/
 #
 
 # Determine if a path exists and is a directory.  Note that we need to test
@@ -213,10 +212,6 @@
     url: "https://download.virtualbox.org/virtualbox/5.2.22/{{ virtualbox_target_package_name.msg }}"
     dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
     force: '{{ virtualbox_refresh_resource_version }}'
-
-# - name: "FAIL NOW"
-#   fail:
-#     msg: "Failing here for debugging new code"
 
 #### Download the Extension Pack from download.virtualbox.org
 
@@ -341,11 +336,12 @@
   debug: var=virtualbox_installation_output
   when: virtualbox_debug
 
-#- name: Reboot system in order to load Virtualbox module(S)
-#  reboot:
-#  when: virtualbox_reboot
+- name: "FAIL when 'The character device /dev/vboxdrv does not exist' contained in virtualbox_installation_output.stderr"
+  fail:
+    msg: "Failing here for debugging new code"
+  when: '"The character device /dev/vboxdrv does not exist" in virtualbox_installation_output.stderr'
 
-# restart the system
+#### Reboot system
 
 - name: Reboot system in order to load Virtualbox module(S)
   shell: sleep 2 && shutdown -r now "Ansible actuated reboot of {{ inventory_hostname }}"
@@ -361,11 +357,32 @@
 
 ### Install Extension Pack
 
+# - name: "Install virtualbox extension pack"
+#   become: true
+#   shell: VBoxManage extpack install --accept-license={{ virtualbox_extension_pack_batch_installation_license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
+#   args:
+#     chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
+#   # when: virtualbox_vagrant_check_deb.rc == 1
+#   register: virtualbox_extension_pack_installation_output
+
+- name: "DEBUG dictionary virtualbox_version_specific_vars"
+  debug:
+    msg: "{{item.key}}: {{item.value}}"
+  with_dict: "{{ virtualbox_version_specific_vars }}"
+
+- name: DEBUG value of versions licence
+  debug:
+    msg: "virtualbox_version_specific_vars {{ item.key }} is {{ item.value.license }}"
+  loop: "{{ lookup('dict', virtualbox_version_specific_vars, wantlist=True) }}"
+  when: virtualbox_lastest_available_version.stdout in item.key
+
 - name: "Install virtualbox extension pack"
   become: true
-  shell: VBoxManage extpack install --accept-license={{ virtualbox_extension_pack_batch_installation_license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
+  shell: VBoxManage extpack install --accept-license={{ item.value.license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
   args:
     chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
+  loop: "{{ lookup('dict', virtualbox_version_specific_vars, wantlist=True) }}"
+  when: virtualbox_lastest_available_version.stdout in item.key
   # when: virtualbox_vagrant_check_deb.rc == 1
   register: virtualbox_extension_pack_installation_output
 
@@ -374,6 +391,15 @@
 - name: DEBUG value of virtualbox_extension_pack_installation_output
   debug: var=virtualbox_extension_pack_installation_output
   when: virtualbox_debug
+
+- name: "FAIL when 'The character device /dev/vboxdrv does not exist' contained in virtualbox_extension_pack_installation_output.stderr"
+  fail:
+    msg: "Failing here for debugging new code"
+  when: "'The character device /dev/vboxdrv does not exist' in {{ virtualbox_extension_pack_installation_output.stderr }}"
+
+# - name: "FAIL NOW"
+#   fail:
+#     msg: "Failing here for debugging new code"
 
 ## Confirm installation
 
@@ -443,5 +469,3 @@
     force: true
 
 #### Local users manual?
-
-
