@@ -12,6 +12,28 @@ virtualbox is an Ansible role used to...
 
 ## Notes
 
+### Troubleshooting
+
+#### VM doing unattended up
+
+```shell
+Could not get lock /var/lib/dpkg/lock-frontend - open (11: Resource temporarily unavailable)", "E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), is another process using it?"]}
+```
+
+* Boot VM using Virtualbox GUI
+
+* Check VM for python process `unattended-upgrade-shutdown --wait-for-signal`
+
+* wait until it completes
+* update /  upgrade then reboot
+* Update VirtualBox
+
+```shell
+sudo ps -ef | grep upgrade
+```
+
+
+
 ### Controller resource population
 
 While the role can be used to automatically populate the controller with new releases the bulk installation license for the VirtualBox Extension Pack must still be obtained manually by running something like the following. Once the licence is accepted the bulk license for whatever version you are installing will be displayed along with a new command line usage example with the correct bulk license. This process is a little unfamiliar for first time users.

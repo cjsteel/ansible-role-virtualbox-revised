@@ -1,7 +1,7 @@
 ---
 # roles/virtualbox/defaults/main.yml
 
-virtualbox_reboot: true
+virtualbox_reboot: false
 virtualbox_debug: true
 virtualbox_resources_mount_check: false
 virtualbox_refresh_resource_version: false            # force re-download of resources, untested
@@ -19,6 +19,8 @@ virtualbox_version_specific_vars:
   5.2.18:
     license: 999998f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e99999
   5.2.22:
+    license: 56be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9eb
+  5.2.24:
     license: 56be48f923303c8cababb0bb4c478284b688ed23f16d775d729b89a2e8e5f9eb
 
 # no longer used:

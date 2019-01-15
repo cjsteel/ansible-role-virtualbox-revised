@@ -2,6 +2,12 @@
 
 
 * make work
+
+
+  * Virtualbox
+
+    * Assign 2G memory to virtualbox VM's
+    * box version support
   * implement
     * virtualbox_version: latest-stable, latest-beta, 5.2.22
   * uninstall if upgrade is desired

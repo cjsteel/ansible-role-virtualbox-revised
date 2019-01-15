@@ -5,3 +5,477 @@
     msg:
       - "Ubuntu 18.04 not supported at this time"
       - "System {{ inventory_hostname }} not configured"
+
+# Notes:
+#
+# ansible_distribution_release works differently for various OS package names. For example:
+#
+# On Ubuntu
+#
+#   ansible_distribution_release: xenial
+#   ansible_distribution_version == '18.04'
+#   ansible_distribution_version == '18.04'
+#
+# On CentOS:
+#
+#   ansible_distribution_release: final
+#   ansible_distribution_version == '6.4'
+#   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int >= 5
+#
+# More up top date: https://ansible-tips-and-tricks.readthedocs.io/en/latest/os-dependent-tasks/variables/
+# SLightly dated reference https://raymii.org/s/tutorials/Ansible_-_Only_if_on_specific_distribution_or_distribution_version.html
+
+- debug:
+    msg:
+      - "Ubuntu 16.04 is supported"
+      - "System {{ inventory_hostname }} being configured"
+
+# On Controller
+
+## Ensure resources mount exists
+
+- name: Ensure that ~/resources/resources-remote-mount exists
+  delegate_to: 127.0.0.1
+  stat:
+    path: '~/resources/resources-remote-mount'
+  register: path_resources_remote_mount
+  when: virtualbox_resources_mount_check
+
+- name: DEBUG value of path_resources_remote_mount
+  debug: var=path_resources_remote_mount
+  when: virtualbox_debug and virtualbox_resources_mount_check
+
+### ~/resources/resources-remote-mount exists and is regular file
+
+- name: "resources remote mount is mounted"
+  debug:
+    msg: "Path to file resources-remote-mount exists and isreg file"
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and (
+        path_resources_remote_mount.stat.exists and
+        path_resources_remote_mount.stat.isreg is defined and
+        path_resources_remote_mount.stat.isreg )
+
+### ~/resources/resources-remote-mount does not exists or is not a  regular file
+
+- name: "version resources path does not exist or is not a directory"
+  debug:
+    msg: "Path to resource version does not exist OR is not a directory"
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and (
+        path_resources_remote_mount.stat.exists is not defined or
+        path_resources_remote_mount.stat.isreg is not defined or not
+        path_resources_remote_mount.stat.isreg )
+
+- fail:
+    msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
+  when: virtualbox_resources_mount_check and (
+        path_resources_remote_mount.stat.exists is not defined or
+        path_resources_remote_mount.stat.isreg is not defined or not
+        path_resources_remote_mount.stat.isreg)
+
+## Ensure virtualbox latest resources directory exists
+
+- name: "Ensure for resources directory exists"
+  delegate_to: 127.0.0.1
+  file:
+    path: ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/
+    state: directory
+    mode: 0755
+
+## Determine the latest available version of virtualbox on virtulabox.org
+
+- name: Get LATEST-STABLE.TXT from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT"
+    force: true
+
+- name: Set value of virtualbox_lastest_available_version variable
+  delegate_to: 127.0.0.1
+  shell: cat ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/latest/LATEST-STABLE.TXT
+  register: virtualbox_lastest_available_version
+
+- name: DEBUG value of virtualbox_lastest_available_version.stdout
+  debug: var=virtualbox_lastest_available_version.stdout
+  when: virtualbox_debug
+
+## Determine if latest version resources are currently available on controller
+
+### Do we have a versioned directory on the controller for the target os?
+#
+# In other words does something like:
+#
+#  ~/resources/sw/ubuntu/16.04/virtualbox/5.2.22/
+#  # or perhaps
+#  ~/resources/sw/ubuntu/18.04/virtualbox/5.2.22/
+#
+
+# Determine if a path exists and is a directory.  Note that we need to test
+# both that p.stat.isdir actually exists, and also that it's set to true.
+
+- stat:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+  register: path_virtualbox_lastest_available_version
+
+### when version directory exists for latest version
+
+- name: version resources path  exists and is a directory
+  debug:
+    msg: "Path to resources version exists and is a directory"
+  when: path_virtualbox_lastest_available_version.stat.isdir is defined and
+        path_virtualbox_lastest_available_version.stat.isdir
+
+# then we do nothing
+
+### when version directory does not exist for latest version
+
+- name: version resources path does not exist or is not a directory
+  debug:
+    msg: "Path to resource version does not exist OR is not a directory"
+  when: path_virtualbox_lastest_available_version.stat.isdir is not defined or not
+        path_virtualbox_lastest_available_version.stat.isdir
+
+### Ensure the directory exists
+
+- name: "Ensure versioned resources directory exists"
+  delegate_to: 127.0.0.1
+  file:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/'
+    state: directory
+    mode: 0755
+
+### populate controller with virtualbox version resources
+
+## Determine the latest available version of virtualbox on virtulabox.org
+
+- name: Get SHA256SUMS from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/SHA256SUMS"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SHA256SUMS"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+- name: "Extract resource filenames from SHA256SUMS"
+  delegate_to: 127.0.0.1
+  shell: awk '{print $2}' SHA256SUMS > ~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/resource_filenames_raw
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "create the file resource_filenames without the '*' preceding each file name"
+  delegate_to: 127.0.0.1
+  shell: cat resource_filenames_raw | cut -c 2-1000 > resource_filenames
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+## Determine the virtualbox distribution package name for this system
+
+- name: Get https://download.virtualbox.org/virtualbox/5.2.22/index.html
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/5.2.22/"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/index.html"
+    force: true
+
+- name: "Grab index as text file"
+  delegate_to: 127.0.0.1
+  shell: html2txt --ignore-links https://download.virtualbox.org/virtualbox/5.2.22/ > index.txt
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "Extract raw package name"
+  delegate_to: 127.0.0.1
+  shell: cat index.txt | grep {{ ansible_distribution_release | lower }}_amd64 | cut -c 11-81 > {{ ansible_distribution_release | lower }}_amd64_package.txt.raw
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+- name: "Extract actual package name"
+  delegate_to: 127.0.0.1
+  shell: sed -r 's/\s+//g' {{ ansible_distribution_release | lower }}_amd64_package.txt.raw > {{ ansible_distribution_release | lower }}_amd64_package.txt
+  args:
+    chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+
+#### Download Targets Virtualbox Distribution Package
+
+- debug: msg="{{lookup('file', '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt') }}"
+  register: virtualbox_target_package_name
+
+- name: Show default empty since i dont have 'variablnotename'
+  debug: msg="{{ lookup('vars', 'myvar', default='')}}"
+  vars:
+    variablename: hello
+    myvar: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt'
+
+- name: DEBUG value of myvar
+  debug: var=myvar
+
+- name: DEBUG value of virtualbox_target_package_name
+  debug: var=virtualbox_target_package_name.msg
+
+- name: "Download Virtualbox Distribution Package"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/5.2.22/{{ virtualbox_target_package_name.msg }}"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the Extension Pack from download.virtualbox.org
+
+- name: Download the Extension Pack from download.virtualbox.org
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/."
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the Guest Additions ISO from download.virtualbox.org
+
+- name: "Download the Guest Additions ISO"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/VBoxGuestAdditions_{{ virtualbox_lastest_available_version.stdout }}.iso"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/."
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the Manual from download.virtualbox.org
+
+- name: "Download the Manual"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+#### Download the SDK from download.virtualbox.org
+
+- name: "Download the SDK"
+  delegate_to: 127.0.0.1
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    dest: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    force: '{{ virtualbox_refresh_resource_version }}'
+
+## Which virtualbox version, if any, is installed on the target?
+#
+# delegate_to used for testing againts a development systems with virtualbox installed
+
+- name: checking if virtualbox is install
+  #  delegate_to: 127.0.0.1
+  command: VBoxManage -V
+  register: virtualbox_installed_version
+  ignore_errors: true
+
+### when virtualbox is installed on target sytem
+
+- name: DEBUG value of virtualbox_installed_version.stdout
+  debug: var=virtualbox_installed_version.stdout
+  when: virtualbox_debug
+
+### when virtualbox is not installed on target
+
+- name: DEBUG value of virtualbox_installed_version
+  debug: msg='VBoxManage -V returns "No such file or directory"'
+  when: virtualbox_installed_version.stdout is not defined
+  ignore_errors: true
+
+## Ensure for resources on target system
+
+## Ensure virtualbox latest resources directory exists
+
+### Ensure for resources directory on target
+
+- name: "Ensure versioned resources directory exists on target system"
+  file:
+    path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/'
+    state: directory
+    mode: 0755
+
+### Copy over resources
+
+- name: "Copy the contents of our resource directory to our target system"
+  copy:
+    src: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
+    dest: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox'
+    mode: 0755
+
+## Installation
+
+### Has a deb package already been installed?
+
+### Install requirmenets
+
+- name: Install build-essential
+  become: true
+  apt:
+    name: build-essential
+    state: latest
+    update_cache: true
+
+- name: DEBUG value of ansible_kernel
+  debug: var=ansible_kernel
+  when: virtualbox_debug
+
+- name: Install kernel headers
+  become: true
+  apt:
+    name: ubuntu-desktop
+    state: present
+
+- name: Install kernel headers
+  become: true
+  apt:
+    name: linux-headers-{{ ansible_kernel }}
+    state: present
+
+- name: Install generic kernel headers (required for lxd install)
+  become: true
+  apt:
+    name: linux-headers-generic
+    state: present
+
+### Install Virtualbox package
+
+- name: "Install virtualbox deb package"
+  become: true
+  apt:
+    deb: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ virtualbox_target_package_name.msg }}"
+  # when: virtualbox_vagrant_check_deb.rc == 1
+  register: virtualbox_installation_output
+
+#### Output from installation
+
+- name: DEBUG value of virtualbox_installation_output
+  debug: var=virtualbox_installation_output
+  when: virtualbox_debug
+
+- name: "FAIL when 'The character device /dev/vboxdrv does not exist' contained in virtualbox_installation_output.stderr"
+  fail:
+    msg: "Failing here for debugging new code"
+  when: '"The character device /dev/vboxdrv does not exist" in virtualbox_installation_output.stderr'
+
+#### Reboot system
+
+- name: Reboot system in order to load Virtualbox module(S)
+  shell: sleep 2 && shutdown -r now "Ansible actuated reboot of {{ inventory_hostname }}"
+  async: 1
+  poll: 0
+  become: true
+  ignore_errors: false
+  when: virtualbox_reboot is defined and virtualbox_reboot == true
+
+- name: Pause after reboot
+  pause: seconds=10
+  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+        "lxd" in virtualbox_testing_provider'
+
+- name: Pause after reboot
+  pause: seconds=30
+  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+        "vagrant" in virtualbox_testing_provider'
+
+## Split version
+
+- name: split value of virtualbox_lastest_available_version.stdout
+  debug:
+    msg: "{{ virtualbox_lastest_available_version.stdout.split('.') }}"
+  register: myoutput
+
+- name: "loop through list from a variable"
+  debug:
+    msg: "An item: {{item}}"
+  with_items: "{{ myoutput.msg }}"
+
+- name: "Register virtualbox_major_minor_version"
+  debug:
+    msg: "{{ myoutput.msg[0] }}.{{ myoutput.msg[1] }}"
+  register: virtualbox_major_minor_version
+
+- name: "DEBUG virtualbox_major_minor_version"
+  debug:
+    var: virtualbox_major_minor_version
+
+### Install Extension Pack
+
+# - name: "Install virtualbox extension pack"
+#   become: true
+#   shell: VBoxManage extpack install --accept-license={{ virtualbox_extension_pack_batch_installation_license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
+#   args:
+#     chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
+#   # when: virtualbox_vagrant_check_deb.rc == 1
+#   register: virtualbox_extension_pack_installation_output
+
+- name: "DEBUG dictionary virtualbox_version_specific_vars"
+  debug:
+    msg: "{{item.key}}: {{item.value}}"
+  with_dict: "{{ virtualbox_version_specific_vars }}"
+
+- name: DEBUG value of versions licence
+  debug:
+    msg: "virtualbox_version_specific_vars {{ item.key }} is {{ item.value.license }}"
+  loop: "{{ lookup('dict', virtualbox_version_specific_vars, wantlist=True) }}"
+  when: virtualbox_lastest_available_version.stdout in item.key
+
+- name: "Install virtualbox extension pack"
+  become: true
+  shell: VBoxManage extpack install --accept-license={{ item.value.license }} --replace Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_lastest_available_version.stdout }}.vbox-extpack
+  args:
+    chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
+  loop: "{{ lookup('dict', virtualbox_version_specific_vars, wantlist=True) }}"
+  when: virtualbox_lastest_available_version.stdout in item.key
+  register: virtualbox_extension_pack_installation_output
+
+#### Output from installation
+
+- name: "DEBUG value of virtualbox_extension_pack_installation_output"
+  debug:
+    var: virtualbox_extension_pack_installation_output
+  when: virtualbox_debug
+
+## Confirm installation
+
+- name: checking if virtualbox is install
+  command: VBoxManage -V
+  register: virtualbox_installed_version
+  ignore_errors: true
+
+### when virtualbox is installed on target sytem
+
+- name: DEBUG value of virtualbox_installed_version.stdout
+  debug: var=virtualbox_installed_version.stdout
+  when: virtualbox_debug
+
+### when virtualbox is not installed on target
+
+- name: DEBUG value of virtualbox_installed_version
+  debug: msg='VBoxManage -V returns "No such file or directory"'
+  when: virtualbox_installed_version.stdout is not defined
+  ignore_errors: true
+
+## Documentation
+
+### Virtualbox Included Documents
+
+#### /usr/share/doc/virtualbox-[0-9].[0-9]
+
+##### User Manual
+
+- name: "Copy remote UserManual.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
+  become: true
+  copy:
+    src: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
+    remote_src: true
+    mode: 0644
+    force: true
+
+##### SDK Reference
+
+- name: "Copy remote SDKRef.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
+  become: true
+  copy:
+    src: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
+    remote_src: true
+    mode: 0644
+    force: true
+
+#### Local users manual?

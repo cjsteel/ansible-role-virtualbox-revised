@@ -8,8 +8,12 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: instance
-    box: ubuntu/xenial64
+  - name: bionic
+    box: cjsteel/bionic
+    memory: 2048
+    cpus: 2
+    provider_raw_config_args:
+      - "customize [ 'modifyvm', :id, '--uartmode1', 'disconnected' ]"
 provisioner:
   name: ansible
   lint:
