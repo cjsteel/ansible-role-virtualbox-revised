@@ -3,9 +3,8 @@
 
 - debug:
     msg:
-      - "Ubuntu 18.04 not supported at this time"
-      - "System {{ inventory_hostname }} not configured"
-
+      - "Ubuntu 18.04 is supported"
+      - "System {{ inventory_hostname }} being configured"
 # Notes:
 #
 # ansible_distribution_release works differently for various OS package names. For example:
@@ -477,5 +476,3 @@
     remote_src: true
     mode: 0644
     force: true
-
-#### Local users manual?

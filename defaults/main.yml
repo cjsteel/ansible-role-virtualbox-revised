@@ -3,7 +3,7 @@
 
 virtualbox_reboot: false
 virtualbox_debug: true
-virtualbox_resources_mount_check: false
+virtualbox_resources_mount_check: true
 virtualbox_refresh_resource_version: false            # force re-download of resources, untested
 virtualbox_version: latest-stable                            # specific version 5.2.22 OR latest-stable
 

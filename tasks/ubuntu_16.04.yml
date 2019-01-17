@@ -1,6 +1,11 @@
 ---
 # roles/virtualbox/tasks/ubuntu_16.04.yml
 
+- debug:
+    msg:
+      - "Ubuntu 18.04 not supported at this time"
+      - "System {{ inventory_hostname }} not configured"
+
 # Notes:
 #
 # ansible_distribution_release works differently for various OS package names. For example:
@@ -312,6 +317,12 @@
 - name: Install kernel headers
   become: true
   apt:
+    name: ubuntu-desktop
+    state: present
+
+- name: Install kernel headers
+  become: true
+  apt:
     name: linux-headers-{{ ansible_kernel }}
     state: present
 
@@ -353,7 +364,34 @@
 
 - name: Pause after reboot
   pause: seconds=10
-  when: virtualbox_reboot is defined and virtualbox_reboot == true
+  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+        "lxd" in virtualbox_testing_provider'
+
+- name: Pause after reboot
+  pause: seconds=30
+  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+        "vagrant" in virtualbox_testing_provider'
+
+## Split version
+
+- name: split value of virtualbox_lastest_available_version.stdout
+  debug:
+    msg: "{{ virtualbox_lastest_available_version.stdout.split('.') }}"
+  register: myoutput
+
+- name: "loop through list from a variable"
+  debug:
+    msg: "An item: {{item}}"
+  with_items: "{{ myoutput.msg }}"
+
+- name: "Register virtualbox_major_minor_version"
+  debug:
+    msg: "{{ myoutput.msg[0] }}.{{ myoutput.msg[1] }}"
+  register: virtualbox_major_minor_version
+
+- name: "DEBUG virtualbox_major_minor_version"
+  debug:
+    var: virtualbox_major_minor_version
 
 ### Install Extension Pack
 
@@ -383,23 +421,14 @@
     chdir: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}"
   loop: "{{ lookup('dict', virtualbox_version_specific_vars, wantlist=True) }}"
   when: virtualbox_lastest_available_version.stdout in item.key
-  # when: virtualbox_vagrant_check_deb.rc == 1
   register: virtualbox_extension_pack_installation_output
 
 #### Output from installation
 
-- name: DEBUG value of virtualbox_extension_pack_installation_output
-  debug: var=virtualbox_extension_pack_installation_output
+- name: "DEBUG value of virtualbox_extension_pack_installation_output"
+  debug:
+    var: virtualbox_extension_pack_installation_output
   when: virtualbox_debug
-
-- name: "FAIL when 'The character device /dev/vboxdrv does not exist' contained in virtualbox_extension_pack_installation_output.stderr"
-  fail:
-    msg: "Failing here for debugging new code"
-  when: "'The character device /dev/vboxdrv does not exist' in {{ virtualbox_extension_pack_installation_output.stderr }}"
-
-# - name: "FAIL NOW"
-#   fail:
-#     msg: "Failing here for debugging new code"
 
 ## Confirm installation
 
@@ -423,25 +452,6 @@
 
 ## Documentation
 
-- name: split value of virtualbox_lastest_available_version.stdout
-  debug:
-    msg: "{{ virtualbox_lastest_available_version.stdout.split('.') }}"
-  register: myoutput
-
-- name: "loop through list from a variable"
-  debug:
-    msg: "An item: {{item}}"
-  with_items: "{{ myoutput.msg }}"
-
-- name: "Register virtualbox_major_minor_version"
-  debug:
-    msg: "{{ myoutput.msg[0] }}.{{ myoutput.msg[1] }}"
-  register: virtualbox_major_minor_version
-
-- name: "DEBUG virtualbox_major_minor_version"
-  debug:
-    var: virtualbox_major_minor_version
-
 ### Virtualbox Included Documents
 
 #### /usr/share/doc/virtualbox-[0-9].[0-9]
@@ -451,7 +461,7 @@
 - name: "Copy remote UserManual.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
   become: true
   copy:
-    src: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
+    src: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/UserManual.pdf"
     dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
     remote_src: true
     mode: 0644
@@ -462,10 +472,8 @@
 - name: "Copy remote SDKRef.pdf to /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/ directory"
   become: true
   copy:
-    src: "~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
+    src: "{{ virtualbox_deployment_users_home }}/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/SDKRef.pdf"
     dest: /usr/share/doc/virtualbox-{{ virtualbox_major_minor_version.msg }}/
     remote_src: true
     mode: 0644
     force: true
-
-#### Local users manual?

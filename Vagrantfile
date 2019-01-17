@@ -58,27 +58,24 @@
     {
       :name => "xenial",
       :distribution => "ubuntu",
-      :box => "ubuntu/xenial64",
-      :version => "20180522.0.0",
-#      :box => "jcaraballo/ubuntu-desktop-xenial",
-#      :version => "0.0.3",
+      :box => "cjsteel/xenial",
+      :version => "20190116.0.1",
       :ip => '10.0.0.23',
       :cpu => "50",
-#      :disk_size => "10GB",
-      :ram => "256"
+#      :disk_size => "20GB",
+      :ram => "2048"
     },
     {
       :name => "bionic",
       :distribution => "ubuntu",
-      :box => "ubuntu/bionic64",
-      :version => "20180717.1.0",
-#      :version => "20180522.0.0",
+      :box => "cjsteel/bionic",
+      :version => "20190115.0.1",
 #      :box => "teknikersai/ubuntu-desktop-bionic64",
 #      :version => "0.0.2",
       :ip => '10.0.0.24',
       :cpu => "50",
 #      :disk_size => "10GB",
-      :ram => "256"
+      :ram => "2048"
     },
     {
       :name => "centos6",
