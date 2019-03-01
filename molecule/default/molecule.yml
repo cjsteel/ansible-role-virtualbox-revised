@@ -6,13 +6,11 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: virtualbox-default-xenial
+  - name: bionic-desktop
     source:
-      alias: ubuntu/xenial/amd64
-  - name: virtualbox-default-bionic
-    source:
-      type: image
-      alias: ubuntu/bionic/amd64
+      type: copy
+      mode: local
+      alias: bionic-desktop
 provisioner:
   name: ansible
   lint:

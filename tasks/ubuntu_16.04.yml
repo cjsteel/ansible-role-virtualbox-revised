@@ -55,7 +55,7 @@
         path_resources_remote_mount.stat.isreg is defined and
         path_resources_remote_mount.stat.isreg )
 
-### ~/resources/resources-remote-mount does not exists or is not a  regular file
+### DEBUG ~/resources/resources-remote-mount does not exists or is not a  regular file
 
 - name: "version resources path does not exist or is not a directory"
   debug:
@@ -67,7 +67,7 @@
 
 - fail:
     msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
-  when: virtualbox_resources_mount_check and (
+  when: virtualbox_resources_mount_check != true and (
         path_resources_remote_mount.stat.exists is not defined or
         path_resources_remote_mount.stat.isreg is not defined or not
         path_resources_remote_mount.stat.isreg)

@@ -4,6 +4,6 @@
   vars:
     - virtualbox_deployment_users_home: /root
     - virtualbox_testing_provider: lxd
-
+    - virtualbox_resources_mount_check: true
   roles:
     - virtualbox
