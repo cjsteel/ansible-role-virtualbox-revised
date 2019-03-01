@@ -32,8 +32,6 @@ Could not get lock /var/lib/dpkg/lock-frontend - open (11: Resource temporarily 
 sudo ps -ef | grep upgrade
 ```
 
-
-
 ### Controller resource population
 
 While the role can be used to automatically populate the controller with new releases the bulk installation license for the VirtualBox Extension Pack must still be obtained manually by running something like the following. Once the licence is accepted the bulk license for whatever version you are installing will be displayed along with a new command line usage example with the correct bulk license. This process is a little unfamiliar for first time users.
