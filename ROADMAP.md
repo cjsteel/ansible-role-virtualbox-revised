@@ -2,8 +2,8 @@
 
 ## Fresh
 
+* customize lint comments
 * matrix for versions
-* 
 
 ## Old
 

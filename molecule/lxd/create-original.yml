@@ -27,4 +27,4 @@
         profiles: "{{ item.profiles | default(omit) }}"
         wait_for_ipv4_addresses: true
         timeout: 600
-with_items: "{{ molecule_yml.platforms }}"
+      with_items: "{{ molecule_yml.platforms }}"

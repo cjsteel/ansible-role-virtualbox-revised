@@ -8,8 +8,8 @@ lint:
 platforms:
   - name: virtualbox-bionic-dt
     source:
-      type: image    
-      server: https://christopher-P1:8443              
+      type: image
+      server: https://christopher-P1:8443
       alias: bionic-dt
     profiles:
       - default
