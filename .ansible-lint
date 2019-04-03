@@ -1,0 +1,6 @@
+skip_list:
+  - '204'  # Lines should be no longer than 160 chars
+  - '301'  # Commands should not change things if nothing needs doing
+  - '303'  # Using command rather than module - sed used in place of template, replace or lineinfile module
+  - '305'  # Use shell only when shell functionality is required
+

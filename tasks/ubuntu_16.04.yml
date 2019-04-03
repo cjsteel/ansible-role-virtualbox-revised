@@ -65,9 +65,10 @@
         path_resources_remote_mount.stat.isreg is not defined or not
         path_resources_remote_mount.stat.isreg )
 
-- fail:
+- name: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
+  fail:
     msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
-  when: virtualbox_resources_mount_check != true and (
+  when: not virtualbox_resources_mount_check and (
         path_resources_remote_mount.stat.exists is not defined or
         path_resources_remote_mount.stat.isreg is not defined or not
         path_resources_remote_mount.stat.isreg)
@@ -113,7 +114,8 @@
 # Determine if a path exists and is a directory.  Note that we need to test
 # both that p.stat.isdir actually exists, and also that it's set to true.
 
-- stat:
+- name: "register path to the latest available version of virtualbox"
+  stat:
     path: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
   register: path_virtualbox_lastest_available_version
 
@@ -163,7 +165,7 @@
 
 - name: "create the file resource_filenames without the '*' preceding each file name"
   delegate_to: 127.0.0.1
-  shell: cat resource_filenames_raw | cut -c 2-1000 > resource_filenames
+  shell: set -o pipefail && cat resource_filenames_raw | cut -c 2-1000 > resource_filenames
   args:
     chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
 
@@ -184,7 +186,7 @@
 
 - name: "Extract raw package name"
   delegate_to: 127.0.0.1
-  shell: cat index.txt | grep {{ ansible_distribution_release | lower }}_amd64 | cut -c 11-81 > {{ ansible_distribution_release | lower }}_amd64_package.txt.raw
+  shell: set -o pipefail && cat index.txt | grep {{ ansible_distribution_release | lower }}_amd64 | cut -c 11-81 > {{ ansible_distribution_release | lower }}_amd64_package.txt.raw
   args:
     chdir: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}'
 
@@ -196,11 +198,11 @@
 
 #### Download Targets Virtualbox Distribution Package
 
-- debug: msg="{{lookup('file', '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt') }}"
+- debug: msg="{{ lookup('file', '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt') }}"
   register: virtualbox_target_package_name
 
 - name: Show default empty since i dont have 'variablnotename'
-  debug: msg="{{ lookup('vars', 'myvar', default='')}}"
+  debug: msg="{{ lookup('vars', 'myvar', default='') }}"
   vars:
     variablename: hello
     myvar: '~/resources/sw/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/virtualbox/{{ virtualbox_lastest_available_version.stdout }}/{{ ansible_distribution_release | lower }}_amd64_package.txt'
@@ -307,7 +309,7 @@
   become: true
   apt:
     name: build-essential
-    state: latest
+    state: present
     update_cache: true
 
 - name: DEBUG value of ansible_kernel
@@ -360,16 +362,16 @@
   poll: 0
   become: true
   ignore_errors: false
-  when: virtualbox_reboot is defined and virtualbox_reboot == true
+  when: virtualbox_reboot is defined and virtualbox_reboot
 
 - name: Pause after reboot
   pause: seconds=10
-  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+  when: 'virtualbox_reboot is defined and virtualbox_reboot and
         "lxd" in virtualbox_testing_provider'
 
 - name: Pause after reboot
   pause: seconds=30
-  when: 'virtualbox_reboot is defined and virtualbox_reboot == true and
+  when: 'virtualbox_reboot is defined and virtualbox_reboot and
         "vagrant" in virtualbox_testing_provider'
 
 ## Split version
@@ -381,7 +383,7 @@
 
 - name: "loop through list from a variable"
   debug:
-    msg: "An item: {{item}}"
+    msg: "An item: {{ item }}"
   with_items: "{{ myoutput.msg }}"
 
 - name: "Register virtualbox_major_minor_version"
@@ -405,7 +407,7 @@
 
 - name: "DEBUG dictionary virtualbox_version_specific_vars"
   debug:
-    msg: "{{item.key}}: {{item.value}}"
+    msg: "{{ item.key }}: {{ item.value }}"
   with_dict: "{{ virtualbox_version_specific_vars }}"
 
 - name: DEBUG value of versions licence
