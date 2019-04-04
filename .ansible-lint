@@ -3,4 +3,4 @@ skip_list:
   - '301'  # Commands should not change things if nothing needs doing
   - '303'  # Using command rather than module - sed used in place of template, replace or lineinfile module
   - '305'  # Use shell only when shell functionality is required
-
+  - '306'  # [306] Shells that use pipes should set the pipefail option

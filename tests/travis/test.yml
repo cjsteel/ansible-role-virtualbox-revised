@@ -1,0 +1,8 @@
+--- # virtualbox/tests/travis_test.yml
+- name: Converge
+  hosts: all
+  vars:
+    - virtualbox_deployment_users_home: /home/travis
+    - virtualbox_testing_provider: travis
+  roles:
+    - role: virtualbox
