@@ -1,6 +1,29 @@
 # roles/virtualbox/ROADMAP.md
 
-## 2019-04-04
+## 2019-04-04 - Completed
+
+### Modified to pass Molecule idempotence testing
+
+```shell
+ERROR: Idempotence test failed because of the following tasks:
+* [xenial -> 127.0.0.1] => virtualbox : Set value of virtualbox_lastest_available_version variable
+* [xenial -> 127.0.0.1] => virtualbox : Extract resource filenames from SHA256SUMS
+* [xenial -> 127.0.0.1] => virtualbox : create the file resource_filenames without the '*' preceding each file name
+* [xenial -> 127.0.0.1] => virtualbox : Grab index as text file
+* [xenial -> 127.0.0.1] => virtualbox : Extract raw package name
+* [xenial -> 127.0.0.1] => virtualbox : Extract actual package name
+* [xenial] => virtualbox : checking if virtualbox is install
+* [xenial] => virtualbox : checking if virtualbox is install
+
+* [bionic -> 127.0.0.1] => virtualbox : Set value of virtualbox_lastest_available_version variable
+* [bionic -> 127.0.0.1] => virtualbox : Extract resource filenames from SHA256SUMS
+* [bionic -> 127.0.0.1] => virtualbox : create the file resource_filenames without the '*' preceding each file name
+* [bionic -> 127.0.0.1] => virtualbox : Grab index as text file
+* [bionic -> 127.0.0.1] => virtualbox : Extract raw package name
+* [bionic -> 127.0.0.1] => virtualbox : Extract actual package name
+* [bionic] => virtualbox : checking if virtualbox is already installed
+* [bionic] => virtualbox : checking if virtualbox is install
+```
 
 ### .ansible-lint 
 
