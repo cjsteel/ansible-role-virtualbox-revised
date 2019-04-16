@@ -1,0 +1,47 @@
+---
+
+## Ensure resources mount exists
+
+- name: Ensure that ~/resources/resources-remote-mount exists
+  delegate_to: 127.0.0.1
+  stat:
+    path: '~/resources/resources-remote-mount'
+  register: path_resources_remote_mount
+  when: virtualbox_resources_mount_check
+
+- name: DEBUG value of path_resources_remote_mount
+  debug: var=path_resources_remote_mount
+  when: virtualbox_debug and virtualbox_resources_mount_check
+
+### ~/resources/resources-remote-mount exists and is regular file
+
+- name: "DEBUG: resources remote mount is mounted"
+  debug:
+    msg: "Path to file resources-remote-mount exists and isreg file"
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and
+        ( path_resources_remote_mount.stat.exists and
+        path_resources_remote_mount.stat.isreg is defined and
+        path_resources_remote_mount.stat.isreg )
+
+### DEBUG ~/resources/resources-remote-mount does not exists or is not a  regular file
+
+- name: "DEBUG: version resources path does not exist or is not a directory"
+  debug:
+    msg: "Path to resource version does not exist OR is not a directory"
+  when: (virtualbox_debug and virtualbox_resources_mount_check) and
+        ( path_resources_remote_mount.stat.exists is not defined or
+        path_resources_remote_mount.stat.isreg is not defined or not
+        path_resources_remote_mount.stat.isreg)
+
+- debug:
+    msg:
+      - "virtualbox_resources_mount_check: {{ virtualbox_resources_mount_check }}"
+  when: (not virtualbox_resources_mount_check
+
+- name: ~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file
+  fail:
+    msg: "~/resources/ is not mounted or ~/resources/resources-remote-mount is not a regular file"
+  when: (not virtualbox_resources_mount_check) and (
+        path_resources_remote_mount.stat.exists is not defined or
+        path_resources_remote_mount.stat.isreg is not defined or not
+        path_resources_remote_mount.stat.isreg)

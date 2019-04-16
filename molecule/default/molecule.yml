@@ -1,17 +1,16 @@
 ---
+# molecule/default/molecule.yml
+# molecule/docker/molecule.yml
+
 dependency:
   name: galaxy
 driver:
-  name: lxd
+  name: docker
 lint:
   name: yamllint
 platforms:
-  - name: bionic-desktop
-    source:
-      type: image
-      mode: local
-      server: http://localhost:8443/
-      alias: bionic-desktop
+  - name: providers-bionic
+    image: ubuntu:18.04
 provisioner:
   name: ansible
   lint:
