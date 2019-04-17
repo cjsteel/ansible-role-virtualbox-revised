@@ -9,7 +9,7 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: providers-bionic
+  - name: virtualbox-bionic
     image: ubuntu:18.04
 provisioner:
   name: ansible

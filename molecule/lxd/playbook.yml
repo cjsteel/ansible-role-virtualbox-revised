@@ -9,8 +9,8 @@
   hosts: all
   vars:
 
-    providers_short_name: providers
-    providers_galaxy_name: cjsteel.providers
+    providers_short_name: virtualbox
+    providers_galaxy_name: cjsteel.virtualbox
 
     providers_project_directory: "{{ lookup('env', 'PWD') }}"
 

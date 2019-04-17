@@ -6,7 +6,7 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: providers-xenial
+  - name: virtualbox-xenial
     source:
       type: image
       alias: ubuntu/xenial/amd64
@@ -18,7 +18,7 @@ platforms:
     profiles:
       - default
       - gui
-  - name: providers-bionic
+  - name: virtualbox-bionic
     source:
       type: image
       alias: ubuntu/bionic/amd64
